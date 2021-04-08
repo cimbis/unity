@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,13 +10,18 @@ public class Movement : MonoBehaviour
 {
     [SerializeField] private float thrustRatio = 100f;
     [SerializeField] private float rotationRatio = 1f;
+    [SerializeField] private AudioClip thrusterSound;
+    [SerializeField] private ParticleSystem thrustParticles;
+
+
     private Rigidbody _rocketRigidbody;
-    private AudioSource _rocketBoosterSound;
+    private AudioSource _audioSource;
+    private bool _isRocketThrusting = false;
 
     void Start()
     {
         _rocketRigidbody = GetComponent<Rigidbody>();
-        _rocketBoosterSound = GetComponent<AudioSource>();
+        _audioSource = GetComponent<AudioSource>();
     }
 
     void Update()
@@ -28,31 +34,44 @@ public class Movement : MonoBehaviour
     {
         if (Input.GetKey(KeyCode.Space))
         {
-            Debug.Log("Thrusting");
-
-            _rocketRigidbody.AddRelativeForce(Vector3.up * (thrustRatio * Time.deltaTime));
-
-            if (!_rocketBoosterSound.isPlaying)
-            {
-                _rocketBoosterSound.Play();
-            }
+            ProcessThrust_RocketThrusting();
         }
-        else
+        else if (_isRocketThrusting)
         {
-            _rocketBoosterSound.Stop();
+            ProcessThrust_RocketNotThrusting();
         }
+    }
+
+    private void ProcessThrust_RocketThrusting()
+    {
+        _isRocketThrusting = true;
+        _rocketRigidbody.AddRelativeForce(Vector3.up * (thrustRatio * Time.deltaTime));
+
+        if (!_audioSource.isPlaying)
+        {
+            _audioSource.PlayOneShot(thrusterSound);
+        }
+        if (!thrustParticles.isPlaying)
+        {
+            thrustParticles.Play();
+        }
+    }
+
+    private void ProcessThrust_RocketNotThrusting()
+    {
+        _isRocketThrusting = false;
+        _audioSource.Stop();
+        thrustParticles.Stop();
     }
 
     private void ProcessRotation()
     {
         if (Input.GetKey(KeyCode.A))
         {
-            Debug.Log("Rotate left");
             ApplyRotation(rotationRatio);
         }
         else if (Input.GetKey(KeyCode.D))
         {
-            Debug.Log("Rotate right");
             ApplyRotation(-rotationRatio);
         }
     }
